@@ -9,17 +9,19 @@ const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 
 const buildPath = path.resolve(__dirname, 'dist');
 
-const VENDORLIBS=['normalize.css','bootstrap','jquery']
+const VENDORLIBS=['jquery','bootstrap','popper.js','./src/assets/css/vendor.scss'];
 
 
 
 module.exports = {
 
-  devtool: 'source-map',
-
+  // devtool: 'source-map',
+  devServer:{
+    hot:true
+  },
   entry:{
     app:'./src/assets/js/main.js',
-    vendor: VENDORLIBS
+    vendor: VENDORLIBS,
   },
 
   output: {
@@ -73,10 +75,10 @@ module.exports = {
       },
       {
         // Load all images as base64 encoding if they are smaller than 8192 bytes
-        test: /\.(png|jpe?g|gif|svg|ico)(\?.*)?$/,
+        test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)?(\?v=[0–9]\.[0–9]\.[0–9])?$/, 
         use: [
           {
-            loader: 'url-loader',
+            loader: 'file-loader',
             options: {
               name: 'assets/images/[name].[hash:7].[ext]',
               // outputPath:'images/',
@@ -91,7 +93,13 @@ module.exports = {
 
   // https://webpack.js.org/concepts/plugins/
   plugins: [
+    new webpack.HotModuleReplacementPlugin(),
     new CleanWebpackPlugin(), // cleans output.path by default
+    new webpack.ProvidePlugin({
+      jQuery:'jquery',
+      $:'jquery',
+      jquery:'jquery'
+    }),
     new HtmlWebpackPlugin({
       template: './src/views/pages/index.njk',
       inject: true,
@@ -101,31 +109,30 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/views/pages/about.njk',
       inject: true,
-      // chunks:[],
       filename: 'about.html'
     }),
     new HtmlWebpackPlugin({
       template: './src/views/pages/contact.njk',
       inject: true,
-      // chunks:[],
+
       filename: 'contact.html'
     }),
     new MiniCssExtractPlugin({
       filename: "assets/css/[name].[hash:7].bundle.css",
-      chunkFilename: "[id].[hash:7].css"
+      chunkFilename: "[id].[hash:7].css" //important part
     }),
   ],
 
   // https://webpack.js.org/configuration/optimization/
   optimization: {
-    // minimizer: [
-    //   new UglifyJsPlugin({
-    //     cache: true,
-    //     parallel: true,
-    //     sourceMap: true
-    //   }),
-    //   new OptimizeCssAssetsPlugin({})
-    // ],
+    minimizer: [
+      new UglifyJsPlugin({
+        cache: true,
+        parallel: true,
+        sourceMap: true
+      }),
+      new OptimizeCssAssetsPlugin({})
+    ],
     // splitChunks: {
     //   cacheGroups: {
     //     default: false,

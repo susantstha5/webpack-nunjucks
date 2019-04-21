@@ -1,25 +1,21 @@
+const webpack=require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
+const VENDORLIBS=['jquery','bootstrap','popper.js','./src/assets/css/vendor.scss'];
 module.exports = {
 
-  // This option controls if and how source maps are generated.
-  // https://webpack.js.org/configuration/devtool/
-  devtool: 'eval-cheap-module-source-map',
-
-  // https://webpack.js.org/concepts/entry-points/#multi-page-application
-  entry: {
-    index: './src/page-index/main.js',
-    about: './src/page-about/main.js',
-    contacts: './src/page-contacts/main.js'
-  },
-
-  // https://webpack.js.org/configuration/dev-server/
   devServer: {
+    hot:true,
     port: 8080,
-    writeToDisk: false // https://webpack.js.org/configuration/dev-server/#devserverwritetodisk-
+    writeToDisk: false
   },
 
-  // https://webpack.js.org/concepts/loaders/
+  entry:{
+    vendor: VENDORLIBS,
+    app:'./src/assets/js/main.js',
+  },
+
   module: {
     rules: [
       {
@@ -31,49 +27,67 @@ module.exports = {
         }
       },
       {
-        test: /\.css$/,
+        test: /\.(sa|sc|c)ss$/,
         use: [
-          "style-loader",
-          "css-loader"
-          // Please note we are not running postcss here
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'sass-loader'
         ]
       },
       {
+        test: /\.html$|njk|nunjucks/,
+        use: ['html-loader', {
+          loader: 'nunjucks-html-loader',
+          options: {
+            searchPaths: ['./src/views/partials']
+          }
+        }]
+      },
+      {
         // Load all images as base64 encoding if they are smaller than 8192 bytes
-        test: /\.(png|jpg|gif|svg)$/,
+        test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)?(\?v=[0–9]\.[0–9]\.[0–9])?$/, 
         use: [
           {
-            loader: 'url-loader',
+            loader: 'file-loader',
             options: {
-              // On development we want to see where the file is coming from, hence we preserve the [path]
-              name: '[path][name].[ext]?hash=[hash:20]',
-              limit: 8192
+              name: 'assets/images/[name].[hash:7].[ext]',
+              // outputPath:'images/',
+              // publicPath:'images/',
+              limit: 3000
             }
           }
         ]
       }
+    
     ],
   },
 
   // https://webpack.js.org/concepts/plugins/
   plugins: [
+    // new webpack.ProvidePlugin({
+    //   jQuery:'jquery',
+    //   $:'jquery',
+    //   jquery:'jquery'
+    // }),
     new HtmlWebpackPlugin({
-      template: './src/page-index/tmpl.html',
+      template: './src/views/pages/index.njk',
       inject: true,
-      chunks: ['index'],
       filename: 'index.html'
     }),
     new HtmlWebpackPlugin({
-      template: './src/page-about/tmpl.html',
+      template: './src/views/pages/about.njk',
       inject: true,
-      chunks: ['about'],
       filename: 'about.html'
     }),
     new HtmlWebpackPlugin({
-      template: './src/page-contacts/tmpl.html',
+      template: './src/views/pages/contact.njk',
       inject: true,
-      chunks: ['contacts'],
-      filename: 'contacts.html'
-    })
+
+      filename: 'contact.html'
+    }),
+    new MiniCssExtractPlugin({
+      filename: "assets/css/[name].css",
+      chunkFilename: "[id].css" //important part
+    }),
   ]
 };
